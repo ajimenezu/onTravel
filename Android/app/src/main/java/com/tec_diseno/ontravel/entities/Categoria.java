@@ -1,5 +1,7 @@
 package com.tec_diseno.ontravel.entities;
 
+import android.view.MenuItem;
+
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -20,6 +22,7 @@ public class Categoria {
     @Expose
     private String updated_at;
 
+    private MenuItem menuItem;
 
     public int getId() {
         return id;
@@ -53,4 +56,11 @@ public class Categoria {
         this.updated_at = updated_at;
     }
 
+    public MenuItem getMenuItem() {
+        return menuItem;
+    }
+
+    public void setMenuItem(MenuItem menuItem) {
+        this.menuItem = menuItem;
+    }
 }

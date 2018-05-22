@@ -4,19 +4,20 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import com.tec_diseno.ontravel.entities.Categoria;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CategoriaResponse {
 
     @SerializedName("categorias")
     @Expose
-    List<Categoria> listCategoria = null;
+    ArrayList<Categoria> listCategoria = null;
 
-    public List<Categoria> getListCategoria() {
+    public ArrayList<Categoria> getListCategoria() {
         return listCategoria;
     }
 
-    public void setListCategoria(List<Categoria> listCategoria) {
+    public void setListCategoria(ArrayList<Categoria> listCategoria) {
         this.listCategoria = listCategoria;
     }
 }

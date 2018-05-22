@@ -42,7 +42,7 @@ public class SplashActivity extends AppCompatActivity implements Callback<Catego
     public void onResponse(Call<CategoriaResponse> call, Response<CategoriaResponse> response) {
         if(response.isSuccessful())
         {
-            OnTravelApplication.categorias = response.body();
+            OnTravelApplication.categorias = response.body().getListCategoria();
             Intent i = new Intent(this, MainActivity.class);
             startActivity(i);
         }
