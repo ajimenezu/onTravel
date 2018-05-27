@@ -18,7 +18,8 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/paseo_backgound_prueba">
+        android:background="#B0BEC5"
+        android:id="@+id/layoutItemPaseo">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -29,7 +30,8 @@
             android:orientation="vertical"
             android:paddingBottom="5dp"
             android:paddingLeft="8dp"
-            android:paddingRight="8dp">
+            android:paddingRight="8dp"
+            android:id="@+id/layoutBottomItem">
 
             <TextView
                 android:id="@+id/paseo_nombre"
@@ -72,7 +74,16 @@
 
         </LinearLayout>
 
-
+        <ImageView
+            android:id="@+id/imgNoPicture"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_centerVertical="true"
+            android:layout_above="@id/layoutBottomItem"
+            android:visibility="invisible"
+            app:srcCompat="@android:drawable/ic_menu_report_image" />
 
 
     </RelativeLayout>

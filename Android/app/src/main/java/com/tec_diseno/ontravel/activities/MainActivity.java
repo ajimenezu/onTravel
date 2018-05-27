@@ -1,19 +1,14 @@
 package com.tec_diseno.ontravel.activities;
 
 import android.app.Activity;
-import android.app.KeyguardManager;
 import android.content.Context;
 import android.os.Bundle;
-import android.os.PersistableBundle;
-import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.SubMenu;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -22,32 +17,30 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
+import android.view.View;
 
 import com.tec_diseno.ontravel.OnTravelApplication;
 import com.tec_diseno.ontravel.R;
-import com.tec_diseno.ontravel.adapters.ViajeAdapter;
+import com.tec_diseno.ontravel.adapters.PaseoAdapter;
 import com.tec_diseno.ontravel.entities.Categoria;
-import com.tec_diseno.ontravel.entities.Viaje;
-import com.tec_diseno.ontravel.managers.CategoriaManager;
-import com.tec_diseno.ontravel.responses.CategoriaResponse;
+import com.tec_diseno.ontravel.entities.Paseo;
+import com.tec_diseno.ontravel.managers.PaseoManager;
+import com.tec_diseno.ontravel.responses.PaseoResponse;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Random;
 
 import butterknife.ButterKnife;
+
+import butterknife.BindView;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import butterknife.OnClick;
-import butterknife.BindView;
-
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, Callback<PaseoResponse> {
 
     @BindView(R.id.swipe_main)
     SwipeRefreshLayout swipe;
@@ -58,6 +51,7 @@ public class MainActivity extends AppCompatActivity
     Context context;
     Activity activity;
     RecyclerView.Adapter adapter;
+    Categoria categoriaSeleccionada;
     private LinearLayoutManager linearLayoutManager;
 
     @Override
@@ -110,7 +104,7 @@ public class MainActivity extends AppCompatActivity
         swipe.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                refreshContent(null);
+                refreshContent(categoriaSeleccionada);
             }
         });
 
@@ -139,10 +133,9 @@ public class MainActivity extends AppCompatActivity
         if (itemCategoria != null) {
             for (Categoria categoria : OnTravelApplication.categorias) {
                 if (categoria.getMenuItem() == item) {
-
+                    this.categoriaSeleccionada = categoria;
                     getSupportActionBar().setTitle(categoria.getName());
                     refreshContent(categoria);
-
                     break;
                 }
             }
@@ -158,22 +151,31 @@ public class MainActivity extends AppCompatActivity
 
     private void refreshContent(Categoria categoria) {
         swipe.setRefreshing(true);
-        OnTravelApplication.viajes = new ArrayList<>();
 
-        Random r = new Random();
-        int lIndex = r.nextInt(14) + 1;
-        for (int i = 1; i <= lIndex; i++)
-        {
-            String lPrecio = String.format("%d",(long)(i*5));
-
-            OnTravelApplication.viajes.add(new Viaje("Viaje num. " + i,
-                    "Ubicaciòn del viaje " + i, lPrecio));
+        if (categoria != null) {
+            PaseoManager.getPaseosCategoria(categoria.getId(), this);
         }
 
+    }
 
-       adapter = new ViajeAdapter(OnTravelApplication.viajes,context,activity);
-        recyclerView.setAdapter(adapter);
-        swipe.setRefreshing(false);
+    @Override
+    public void onResponse(Call<PaseoResponse> call, Response<PaseoResponse> response) {
+      if(response.isSuccessful())
+      {
+          adapter = new PaseoAdapter(response.body().getListPaseos(), context, activity);
+          recyclerView.setAdapter(adapter);
+          swipe.setRefreshing(false);
+      }
+      else
+      {
+          Snackbar.make(findViewById(R.id.splash_content), "Problemas cargando los paseos de la categoría seleccionada",
+                  Snackbar.LENGTH_LONG).show();
+      }
+    }
 
+    @Override
+    public void onFailure(Call<PaseoResponse> call, Throwable t) {
+        Snackbar.make(findViewById(R.id.drawer_layout), "Problemas cargando los paseos de la categoría seleccionada",
+                Snackbar.LENGTH_LONG).show();
     }
 }
