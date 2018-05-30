@@ -12,6 +12,7 @@ public class OnTravelApplication extends Application {
 
     private static Context mContext;
     public static ArrayList<Categoria> categorias;
+    public static Paseo paseo;
 
     @Override
     public void onCreate() {

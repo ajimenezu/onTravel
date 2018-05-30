@@ -2,6 +2,7 @@ package com.tec_diseno.ontravel.adapters;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -13,7 +14,9 @@ import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.tec_diseno.ontravel.OnTravelApplication;
 import com.tec_diseno.ontravel.R;
+import com.tec_diseno.ontravel.activities.PaseoActivity;
 import com.tec_diseno.ontravel.entities.Paseo;
 import com.tec_diseno.ontravel.managers.PaseoManager;
 import com.tec_diseno.ontravel.responses.PaseoResponse;
@@ -56,7 +59,7 @@ public class PaseoAdapter extends RecyclerView.Adapter<PaseoAdapter.ViewHolder> 
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder holder, final int position) {
        // final ViewHolder hol = holder;
         final Paseo paseo = paseos.get(position);
        holder.nombre.setText( paseo.getName());
@@ -76,11 +79,14 @@ public class PaseoAdapter extends RecyclerView.Adapter<PaseoAdapter.ViewHolder> 
                         byte[] decodedString = Base64.decode(lImagen, Base64.DEFAULT);
                         Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
                         Drawable drawable = new BitmapDrawable(context.getResources(), decodedByte);
-                        holder.layout.setBackground(drawable);
+
                         paseo.setImagen(drawable);
+                        holder.layout.setBackground(paseo.getImagen());
+
                     }
-                    else
+                    else {
                         holder.sinImagen.setVisibility(View.VISIBLE);
+                    }
                 }
                 else
                 {
@@ -91,6 +97,20 @@ public class PaseoAdapter extends RecyclerView.Adapter<PaseoAdapter.ViewHolder> 
             @Override
             public void onFailure(Call<PaseoResponse> call, Throwable t) {
                 holder.sinImagen.setVisibility(View.VISIBLE);
+            }
+        });
+
+        holder.layout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    OnTravelApplication.paseo = paseos.get(position);
+                    Intent i = new Intent(context, PaseoActivity.class);
+                    //i.putExtra("evento",events.get(position));
+                    activity.startActivity(i);
+                } catch (Exception e) {
+                    //Toast.makeText(context, e.getMessage(), Toast.LENGTH_LONG).show();
+                }
             }
         });
 
