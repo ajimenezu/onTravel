@@ -2,12 +2,16 @@ package com.tec_diseno.ontravel.activities;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.SubMenu;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -18,6 +22,8 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.tec_diseno.ontravel.OnTravelApplication;
 import com.tec_diseno.ontravel.R;
@@ -39,6 +45,15 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, Callback<PaseoResponse> {
 
@@ -47,6 +62,12 @@ public class MainActivity extends AppCompatActivity
     @BindView(R.id.recycler_main)
     RecyclerView recyclerView;
 
+    ImageView imgUsuario;
+    TextView txtNombreUsuario;
+    TextView txtCorreoUsuario;
+    Menu menuNavegacion;
+    DrawerLayout drawer;
+
     SubMenu subMenuCategorias;
     Context context;
     Activity activity;
@@ -54,10 +75,17 @@ public class MainActivity extends AppCompatActivity
     Categoria categoriaSeleccionada;
     private LinearLayoutManager linearLayoutManager;
 
+    GoogleSignInClient mGoogleSignInClient;
+    private static final String TAG = "SignInActivity";
+    private static final int RC_SIGN_IN = 9001;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        this.imgUsuario = findViewById(R.id.imgUsuario);
+        this.txtNombreUsuario = findViewById(R.id.txtNombreUsuario);
+        this.txtCorreoUsuario = findViewById(R.id.txtCorreoUsuario);
         context = this;
         activity = this;
         ButterKnife.bind(this);
@@ -69,15 +97,22 @@ public class MainActivity extends AppCompatActivity
         linearLayoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(linearLayoutManager);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
 
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
+
+
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        View headerView = navigationView.getHeaderView(0);
+
+        this.txtCorreoUsuario = (TextView) headerView.findViewById(R.id.txtCorreoUsuario);
+        this.txtNombreUsuario = (TextView) headerView.findViewById(R.id.txtNombreUsuario);
 
         Collections.sort(OnTravelApplication.categorias, new Comparator<Categoria>() {
             @Override
@@ -86,7 +121,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        Menu menuNavegacion = navigationView.getMenu();
+        menuNavegacion = navigationView.getMenu();
         subMenuCategorias = menuNavegacion.addSubMenu("Categorías");
 
         int index = 0;
@@ -109,8 +144,23 @@ public class MainActivity extends AppCompatActivity
         });
 
 
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+        // Build a GoogleSignInClient with the options specified by gso.
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        updateUI(account);
+    }
 
     @Override
     public void onBackPressed() {
@@ -121,6 +171,8 @@ public class MainActivity extends AppCompatActivity
             finish();
 
     }
+
+
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
@@ -140,11 +192,17 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         } else {
-
+           if(id == R.id.actionLogin)
+           {
+               signIn();
+           }
+           else if (id == R.id.actionLogOut) {
+               signOut();
+           }
 
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -177,5 +235,61 @@ public class MainActivity extends AppCompatActivity
     public void onFailure(Call<PaseoResponse> call, Throwable t) {
         Snackbar.make(findViewById(R.id.drawer_layout), "Problemas cargando los paseos de la categoría seleccionada",
                 Snackbar.LENGTH_LONG).show();
+    }
+
+    private void signIn() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent,RC_SIGN_IN);
+    }
+
+    private void signOut() {
+        mGoogleSignInClient.signOut()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        // [START_EXCLUDE]
+                        updateUI(null);
+                        // [END_EXCLUDE]
+                    }
+                });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.w("myTag", "on activity");
+        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+        Log.w("myTag", "on activity 2");
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+
+            updateUI(account);
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w("myTag", "signInResult:failed code=" + e.getStatusCode());
+            updateUI(null);
+
+        }
+    }
+
+    private void updateUI(@Nullable GoogleSignInAccount account) {
+        menuNavegacion.findItem(R.id.actionLogin).setVisible(account == null);
+        menuNavegacion.findItem(R.id.actionLogOut).setVisible(account != null);
+
+        this.txtCorreoUsuario.setText(account != null ? account.getEmail() : "");
+        this.txtNombreUsuario.setText(account != null ? account.getDisplayName(): "");
+
+
     }
 }

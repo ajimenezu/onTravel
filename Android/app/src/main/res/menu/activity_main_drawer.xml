@@ -2,6 +2,16 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
+    <group android:orderInCategory="999999">
+       <item android:id="@+id/actionLogin"
+             android:title="Login"
+             android:icon="@android:drawable/ic_input_delete"></item>
+        <item android:id="@+id/actionLogOut"
+            android:title="Logout"
+            android:icon="@android:drawable/ic_lock_idle_lock">
 
+        </item>
+
+    </group>
 
 </menu>
