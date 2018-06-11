@@ -20,12 +20,12 @@ public class PaseoResponse {
     @Expose
     String imagen;
 
+    @SerializedName("paseo")
+    @Expose
+    Paseo paseo = null;
+
     public ArrayList<Paseo> getListPaseos() {
         return listPaseos;
-    }
-
-    public void setListCategoria(ArrayList<Paseo> listPaseos) {
-        this.listPaseos = listPaseos;
     }
 
     public void setListPaseos(ArrayList<Paseo> listPaseos) {
@@ -38,5 +38,13 @@ public class PaseoResponse {
 
     public void setImagen(String imagen) {
         this.imagen = imagen;
+    }
+
+    public Paseo getPaseo() {
+        return paseo;
+    }
+
+    public void setPaseo(Paseo paseo) {
+        this.paseo = paseo;
     }
 }

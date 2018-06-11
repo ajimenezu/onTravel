@@ -3,6 +3,11 @@ package com.tec_diseno.ontravel.activities;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -23,6 +28,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.tec_diseno.ontravel.OnTravelApplication;
@@ -33,6 +39,7 @@ import com.tec_diseno.ontravel.entities.Paseo;
 import com.tec_diseno.ontravel.managers.PaseoManager;
 import com.tec_diseno.ontravel.responses.PaseoResponse;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -62,9 +69,9 @@ public class MainActivity extends AppCompatActivity
     @BindView(R.id.recycler_main)
     RecyclerView recyclerView;
 
-    ImageView imgUsuario;
     TextView txtNombreUsuario;
     TextView txtCorreoUsuario;
+    LinearLayout fotoUsuario;
     Menu menuNavegacion;
     DrawerLayout drawer;
 
@@ -83,9 +90,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        this.imgUsuario = findViewById(R.id.imgUsuario);
-        this.txtNombreUsuario = findViewById(R.id.txtNombreUsuario);
-        this.txtCorreoUsuario = findViewById(R.id.txtCorreoUsuario);
+
         context = this;
         activity = this;
         ButterKnife.bind(this);
@@ -113,6 +118,7 @@ public class MainActivity extends AppCompatActivity
 
         this.txtCorreoUsuario = (TextView) headerView.findViewById(R.id.txtCorreoUsuario);
         this.txtNombreUsuario = (TextView) headerView.findViewById(R.id.txtNombreUsuario);
+        this.fotoUsuario = (LinearLayout) headerView.findViewById(R.id.fotoUsuario);
 
         Collections.sort(OnTravelApplication.categorias, new Comparator<Categoria>() {
             @Override
@@ -158,8 +164,8 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onStart() {
         super.onStart();
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        updateUI(account);
+        OnTravelApplication.account = GoogleSignIn.getLastSignedInAccount(this);
+        updateUI(OnTravelApplication.account);
     }
 
     @Override
@@ -209,7 +215,7 @@ public class MainActivity extends AppCompatActivity
 
     private void refreshContent(Categoria categoria) {
         swipe.setRefreshing(true);
-
+        recyclerView.setAdapter(null);
         if (categoria != null) {
             PaseoManager.getPaseosCategoria(categoria.getId(), this);
         }
@@ -248,6 +254,7 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         // [START_EXCLUDE]
+                        OnTravelApplication.account = null;
                         updateUI(null);
                         // [END_EXCLUDE]
                     }
@@ -257,7 +264,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.w("myTag", "on activity");
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
             // The Task returned from this call is always completed, no need to attach
@@ -265,31 +271,63 @@ public class MainActivity extends AppCompatActivity
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
         }
-        Log.w("myTag", "on activity 2");
+        else
+            OnTravelApplication.account = null;
+
     }
 
     private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
         try {
-            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
-
-
-            updateUI(account);
+            OnTravelApplication.account = completedTask.getResult(ApiException.class);
+            updateUI(OnTravelApplication.account);
         } catch (ApiException e) {
             // The ApiException status code indicates the detailed failure reason.
             // Please refer to the GoogleSignInStatusCodes class reference for more information.
-            Log.w("myTag", "signInResult:failed code=" + e.getStatusCode());
+            OnTravelApplication.account = null;
             updateUI(null);
 
         }
     }
 
     private void updateUI(@Nullable GoogleSignInAccount account) {
+        OnTravelApplication.account = account;
         menuNavegacion.findItem(R.id.actionLogin).setVisible(account == null);
         menuNavegacion.findItem(R.id.actionLogOut).setVisible(account != null);
 
         this.txtCorreoUsuario.setText(account != null ? account.getEmail() : "");
         this.txtNombreUsuario.setText(account != null ? account.getDisplayName(): "");
+        if(account != null) {
+            new DownloadImageTask(this.fotoUsuario)
+                    .execute(account.getPhotoUrl().toString());
+        }
+        else
+            this.fotoUsuario.setBackground(getResources().getDrawable( R.drawable.ic_account_circle_black_24dp ));
+    }
 
+    private class DownloadImageTask extends AsyncTask<String, Void, Drawable> {
+        LinearLayout bmImage;
 
+        public DownloadImageTask(LinearLayout bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Drawable doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            Drawable drawable = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+                drawable = new BitmapDrawable(context.getResources(), mIcon11);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return drawable;
+        }
+
+        protected void onPostExecute(Drawable result) {
+            bmImage.setBackground(result);
+        }
     }
 }

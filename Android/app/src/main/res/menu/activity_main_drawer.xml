@@ -5,10 +5,10 @@
     <group android:orderInCategory="999999">
        <item android:id="@+id/actionLogin"
              android:title="Login"
-             android:icon="@android:drawable/ic_input_delete"></item>
+             android:icon="@drawable/ic_account_box_black_24dp"></item>
         <item android:id="@+id/actionLogOut"
             android:title="Logout"
-            android:icon="@android:drawable/ic_lock_idle_lock">
+            android:icon="@drawable/ic_exit_to_app_black_24dp">
 
         </item>
 
